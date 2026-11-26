@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B4423">
+<title>Verdalia · Panel</title>
+<link rel="icon" type="image/png" href="icono.png">
+<link rel="apple-touch-icon" href="icono-180.png">
+<!--
+  Panel de Verdalia. Este MISMO archivo se publica en Netlify y lo sirve el
+  ESP32 en la casa (scripts/embed_web.py lo mete en el firmware). Los dos
+  responden la misma API: /api/status, /api/history, /api/config, /api/cmd.
+  En Netlify la API pide la clave del panel; el ESP32 la ignora.
+-->
+<style>
+:root{
+  --bg:#05200f; --card:#0b3a20; --card2:#0e4426; --line:#185331;
+  --tx:#eef7ee; --mut:#a3c4ab; --mut2:#76987f;
+  --verde:#6AAE3A; --verde2:#418E3A; --oscuro:#0B4423; --agua:#2fb3d1;
+  --warn:#f2b640; --bad:#f06a55;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;color:var(--tx);min-height:100vh;
+  font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  background:radial-gradient(120% 60% at 50% -10%,#11542c 0%,var(--bg) 60%) no-repeat,var(--bg)}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px 48px}
+button{font:inherit;color:inherit}
+
+/* ---------- cabecera ---------- */
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 12px}
+header img{height:46px;width:auto;display:block}
+.icono-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
+.icono-btn:active{background:var(--card2)}
+.icono-btn svg{width:22px;height:22px}
+.estado-linea{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:13px;margin-bottom:12px;
+  font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.punto{width:9px;height:9px;border-radius:50%;background:var(--verde);flex:none;
+  box-shadow:0 0 0 3px rgba(106,174,58,.18)}
+.punto.warn{background:var(--warn);box-shadow:0 0 0 3px rgba(242,182,64,.18)}
+.punto.bad{background:var(--bad);box-shadow:0 0 0 3px rgba(240,106,85,.2)}
+.aviso{border-radius:12px;padding:10px 12px;margin-bottom:11px;font-size:13.5px;line-height:1.4;display:none}
+.aviso.on{display:block}
+.aviso.warn{background:rgba(242,182,64,.12);border:1px solid rgba(242,182,64,.35);color:#ffd88a}
+.aviso.bad{background:rgba(240,106,85,.12);border:1px solid rgba(240,106,85,.4);color:#ffb2a6}
+
+/* ---------- tarjetas ---------- */
+.card{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);
+  border-radius:16px;padding:14px;margin-bottom:11px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
+.grid .card{margin:0;position:relative;overflow:hidden}
+.grid .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acento,var(--verde))}
+.k{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.9px;font-weight:650}
+.v{font-size:30px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;letter-spacing:-1px;line-height:1.15}
+.v small{font-size:15px;font-weight:500;color:var(--mut);margin-left:2px;letter-spacing:0}
+.ok{color:var(--verde)}.warn{color:var(--warn)}.bad{color:var(--bad)}.mut{color:var(--mut2)}
+.viejo .v{opacity:.45}
+.cab{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.estado{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
+.estado i{width:11px;height:11px;border-radius:50%;background:var(--mut2)}
+.estado.on i{background:var(--verde);box-shadow:0 0 10px var(--verde)}
+.nota{font-size:13px;margin-top:8px;line-height:1.45;color:var(--mut)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:rgba(0,0,0,.22);
+  border:1px solid var(--line);border-radius:12px;padding:4px;margin-top:12px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px 4px;font-size:13.5px;font-weight:650;
+  color:var(--mut);cursor:pointer}
+.seg button.sel{background:var(--verde2);color:#fff}
+.seg button.sel.off{background:#7a2b22}
+.seg button:active{filter:brightness(1.2)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.stat{background:rgba(0,0,0,.18);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--mut2)}
+
+/* ---------- graficos ---------- */
+.ch{margin-top:14px}
+.chh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.chh b{font-size:13px;font-weight:650;display:flex;align-items:center;gap:6px}
+.chh b i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.chh span{font-size:11.5px;color:var(--mut2);font-variant-numeric:tabular-nums}
+.ch svg{width:100%;height:64px;display:block;overflow:visible}
+.eje{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mut2);margin-top:3px}
+
+/* ---------- formularios ---------- */
+label{display:block;color:var(--mut);font-size:12.5px;margin:11px 0 5px;font-weight:600}
+input{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(0,0,0,.25);color:var(--tx);font:16px inherit;font-variant-numeric:tabular-nums}
+input:focus{outline:2px solid var(--verde);outline-offset:-1px;border-color:transparent}
+.dosis{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;
+  border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.dosis:last-child{border:0}
+.dosis b{font-size:19px}
+.boton{width:100%;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:700;
+  background:var(--verde);color:#062a12;cursor:pointer}
+.boton:active{filter:brightness(.92)}
+.boton[disabled]{opacity:.55}
+.enlace{background:none;border:0;color:var(--mut);text-decoration:underline;cursor:pointer;font-size:13px;padding:8px}
+footer{color:var(--mut2);font-size:11.5px;text-align:center;margin-top:20px;line-height:1.7}
+footer em{color:var(--mut)}
+
+/* ---------- hoja de configuracion ---------- */
+.hoja{position:fixed;inset:0;z-index:20;background:rgba(2,14,7,.6);display:none;backdrop-filter:blur(3px)}
+.hoja.on{display:block}
+.hoja-panel{position:absolute;inset:0;max-width:560px;margin:0 auto;background:var(--bg);
+  display:flex;flex-direction:column;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.hoja-cab{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+  border-bottom:1px solid var(--line);background:var(--oscuro)}
+.hoja-cab h2{margin:0;font-size:18px}
+.hoja-cuerpo{flex:1;overflow-y:auto;padding:14px 16px 24px}
+.hoja-pie{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--bg)}
+.grupo h3{margin:0;font-size:15px}
+.grupo p{margin:3px 0 0;font-size:12.5px;color:var(--mut2)}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.campo{position:relative}
+.campo input{padding-right:46px}
+.campo .u{position:absolute;right:11px;bottom:11px;font-size:13px;color:var(--mut2);pointer-events:none}
+.resumen{margin-top:10px;font-size:12.5px;color:var(--verde);line-height:1.4}
+.error{color:var(--bad);font-size:13px;margin:0 0 10px;display:none}
+.error.on{display:block}
+.modo2{grid-template-columns:1fr 1fr;margin-top:10px}
+
+/* ---------- login y aviso flotante ---------- */
+.login{position:fixed;inset:0;z-index:30;background:var(--bg);display:none;place-items:center;padding:24px}
+.login.on{display:grid}
+.login form{width:100%;max-width:340px;text-align:center}
+.login img{width:100%;max-width:300px;margin-bottom:22px}
+.login p{color:var(--mut);font-size:13.5px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:40;
+  background:#f1f8ef;color:#0B4423;border-radius:12px;padding:11px 16px;font-size:14px;font-weight:600;
+  box-shadow:0 8px 30px rgba(0,0,0,.4);transition:.25s;max-width:calc(100% - 32px);pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <img src="logo.svg" alt="Verdalia — Lechuga hidropónica · Cuenca">
+  <button class="icono-btn" id="btnCfg" aria-label="Configuración" onclick="abrirConfig()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#cfe6d2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3.2"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+</header>
+
+<div class="estado-linea"><span class="punto" id="punto"></span><span id="linea">conectando…</span></div>
+<div class="aviso bad" id="avisoSenal"></div>
+<div class="aviso warn" id="avisoTanque">El tanque está bajo: rellenalo y revisá la EC. La bomba sigue andando.</div>
+
+<div id="lecturas">
+<div class="grid">
+  <div class="card" style="--acento:var(--agua)"><div class="k">Agua</div><div class="v" id="agua">--<small>°C</small></div></div>
+  <div class="card" style="--acento:var(--warn)"><div class="k">Aire</div><div class="v" id="aire">--<small>°C</small></div></div>
+  <div class="card" style="--acento:var(--verde)"><div class="k">Humedad</div><div class="v" id="hum">--<small>%</small></div></div>
+  <div class="card" style="--acento:var(--verde2)" id="tarjNivel"><div class="k">Tanque</div><div class="v" id="nivel">--</div></div>
+</div>
+
+<div class="card">
+  <div class="cab"><div><div class="k">Bomba</div><div class="estado" id="bomba"><i></i><span>--</span></div></div></div>
+  <div class="nota" id="bombaNota"></div>
+  <div class="seg" id="segBomba">
+    <button data-m="on"   onclick="orden('bomba','on')">Forzar ON</button>
+    <button data-m="off"  onclick="orden('bomba','off')">Forzar OFF</button>
+    <button data-m="auto" onclick="orden('bomba','auto')">Automático</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="cab"><div><div class="k">Ventilador</div><div class="estado" id="vent"><i></i><span>--</span></div></div></div>
+  <div class="nota" id="ventNota"></div>
+  <div class="stats">
+    <div class="stat"><b id="vHoy">--</b><span>hoy</span></div>
+    <div class="stat"><b id="vAyer">--</b><span>ayer</span></div>
+    <div class="stat"><b id="vMes">--</b><span>este mes</span></div>
+    <div class="stat"><b id="vMesAnt">--</b><span>mes anterior</span></div>
+  </div>
+  <div class="seg" id="segVent">
+    <button data-m="on"   onclick="orden('ventilador','on')">Forzar ON</button>
+    <button data-m="off"  onclick="orden('ventilador','off')">Forzar OFF</button>
+    <button data-m="auto" onclick="orden('ventilador','auto')">Automático</button>
+  </div>
+</div>
+</div>
+
+<div class="card">
+  <div class="k">Últimas 24 horas</div>
+  <div class="ch"><div class="chh"><b><i style="background:var(--agua)"></i>Temperatura del agua</b><span id="ragua"></span></div>
+    <svg id="cagua" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div>
+  <div class="ch"><div class="chh"><b><i style="background:var(--warn)"></i>Temperatura del aire</b><span id="raire"></span></div>
+    <svg id="caire" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div>
+  <div class="ch"><div class="chh"><b><i style="background:var(--verde)"></i>Humedad</b><span id="rhum"></span></div>
+    <svg id="chum" viewBox="0 0 300 64" preserveAspectRatio="none"></svg></div>
+  <div class="eje"><span>hace 24 h</span><span>hace 12 h</span><span>ahora</span></div>
+</div>
+
+<div class="card">
+  <div class="k">Solución nutritiva</div>
+  <div class="fila">
+    <div><label for="vt">Tanque lleno [L]</label><input id="vt" type="number" inputmode="decimal" value="200" oninput="calcular()"></div>
+    <div><label for="va">Hay ahora [L]</label><input id="va" type="number" inputmode="decimal" value="0" oninput="calcular()"></div>
+  </div>
+  <div style="margin-top:12px">
+    <div class="dosis"><span>Solución A</span><b id="dA">--</b></div>
+    <div class="dosis"><span>Solución B</span><b id="dB">--</b></div>
+    <div class="dosis"><span>Solución C</span><b id="dC">--</b></div>
+  </div>
+  <div class="nota" id="dNota"></div>
+</div>
+
+<footer><span id="pie"></span><br><em>Verdalia · Del agua a tu cocina.</em></footer>
+</div>
+
+<!-- ===================== CONFIGURACION ===================== -->
+<div class="hoja" id="hoja">
+  <div class="hoja-panel">
+    <div class="hoja-cab">
+      <h2>Configuración</h2>
+      <button class="icono-btn" aria-label="Cerrar" onclick="cerrarConfig()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#cfe6d2" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="hoja-cuerpo" id="formCfg"><p class="mut">Cargando…</p></div>
+    <div class="hoja-pie">
+      <p class="error" id="errCfg"></p>
+      <button class="boton" id="btnGuardar" onclick="guardarConfig()">Guardar cambios</button>
+      <div style="text-align:center" id="salirBox" hidden><button class="enlace" onclick="salir()">Cerrar sesión en este celular</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CLAVE (solo en Netlify) ===================== -->
+<div class="login" id="login">
+  <form onsubmit="entrar(event)">
+    <img src="logo.svg" alt="Verdalia">
+    <p>Escribí la clave del panel</p>
+    <input id="clave" type="password" autocomplete="current-password" placeholder="Clave">
+    <p class="error" id="errClave">Clave incorrecta</p>
+    <div style="height:10px"></div>
+    <button class="boton">Entrar</button>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+
+// ---------- clave del panel (solo la pide Netlify) ----------
+let CLAVE = "";
+try { CLAVE = localStorage.getItem("verdalia_clave") || ""; } catch (e) {}
+let FUENTE = null;          // "local" (ESP32 en la casa) o "nube" (Netlify)
+let ultimoEstado = null;
+let DOSIS = { a: 5.1, b: 2.7, c: 2.7 };
+
+async function api(ruta, opciones = {}) {
+  const headers = { "x-clave": CLAVE };
+  let body;
+  if (opciones.body !== undefined) {
+    headers["content-type"] = "application/json";
+    body = JSON.stringify(opciones.body);
+  }
+  const r = await fetch(ruta, { method: opciones.method || "GET", headers, body, cache: "no-store" });
+  if (r.status === 401) { pedirClave(); throw new Error("clave"); }
+  const datos = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(datos.error || "Error " + r.status);
+  return datos;
+}
+
+function pedirClave() {
+  $("errClave").classList.toggle("on", CLAVE !== "");
+  $("login").classList.add("on");
+  setTimeout(() => $("clave").focus(), 50);
+}
+
+function entrar(ev) {
+  ev.preventDefault();
+  CLAVE = $("clave").value.trim();
+  try { localStorage.setItem("verdalia_clave", CLAVE); } catch (e) {}
+  $("login").classList.remove("on");
+  actualizar(); historial();
+}
+
+function salir() {
+  CLAVE = "";
+  try { localStorage.removeItem("verdalia_clave"); } catch (e) {}
+  location.reload();
+}
+
+let tToast;
+function aviso(texto) {
+  const t = $("toast");
+  t.textContent = texto;
+  t.classList.add("on");
+  clearTimeout(tToast);
+  tToast = setTimeout(() => t.classList.remove("on"), 3200);
+}
+
+// ---------- formatos ----------
+const n1 = (v) => (v === null || v === undefined ? "--" : v.toFixed(1));
+function duracion(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h ? h + " h " + m + " min" : m + " min";
+}
+function hace(seg) {
+  if (seg < 60) return "hace " + seg + " s";
+  if (seg < 3600) return "hace " + Math.round(seg / 60) + " min";
+  if (seg < 86400) return "hace " + (seg / 3600).toFixed(1).replace(".0", "") + " h";
+  return "hace " + Math.round(seg / 86400) + " días";
+}
+const NOMBRE_MODO = { on: "Forzar ON", off: "Forzar OFF", auto: "Automático" };
+
+// ---------- estado ----------
+async function actualizar() {
+  let s;
+  try { s = await api("/api/status"); }
+  catch (e) {
+    if (e.message !== "clave") { $("punto").className = "punto bad"; $("linea").textContent = "Sin conexión con el panel"; }
+    return;
+  }
+  FUENTE = s.fuente || "local";
+  $("salirBox").hidden = FUENTE !== "nube";
+  if (s.sin_datos) {
+    $("linea").textContent = "El invernadero todavía no se conectó a la nube";
+    $("punto").className = "punto warn";
+    return;
+  }
+  ultimoEstado = s;
+  pintar(s);
+}
+
+function pintar(s) {
+  // Lecturas
+  $("agua").innerHTML = n1(s.temp_agua) + "<small>°C</small>";
+  $("aire").innerHTML = n1(s.temp_aire) + "<small>°C</small>";
+  $("hum").innerHTML = (s.humedad === null ? "--" : s.humedad.toFixed(0)) + "<small>%</small>";
+  const nv = $("nivel");
+  nv.textContent = s.nivel_ok ? "OK" : "Bajo";
+  nv.className = "v " + (s.nivel_ok ? "ok" : "bad");
+  $("tarjNivel").style.setProperty("--acento", s.nivel_ok ? "var(--verde2)" : "var(--bad)");
+  $("avisoTanque").classList.toggle("on", !s.nivel_ok);
+
+  // Linea de estado y señal (en la nube, cuanto hace que no reporta)
+  const pend = s.pendientes || {};
+  let linea = s.modo;
+  let viejo = false;
+  if (FUENTE === "nube") {
+    viejo = s.edad_s > 90;
+    linea += " · " + (viejo ? "último dato " + hace(s.edad_s) : "en línea");
+    $("avisoSenal").innerHTML = "<b>Sin señal del invernadero</b> desde " + hace(s.edad_s).replace("hace ", "hace ") +
+      ". Los valores de abajo son los últimos que llegaron. Revisá la luz y el WiFi de la casa.";
+  } else {
+    linea += " · conectado directo (" + s.ip + ")";
+    if (s.nube && s.nube.activa && !s.nube.ok) linea += " · sin enlace a la nube";
+  }
+  $("avisoSenal").classList.toggle("on", viejo);
+  $("lecturas").classList.toggle("viejo", viejo);
+  $("linea").textContent = linea;
+  $("punto").className = "punto" + (viejo || !s.nivel_ok ? " bad" : s.alerta ? " warn" : "");
+
+  // Bomba
+  const bo = $("bomba");
+  bo.className = "estado" + (s.bomba_on ? " on" : "");
+  bo.querySelector("span").textContent = s.bomba_on ? "Encendida" : "Apagada";
+  const notas = [];
+  if (s.bloqueo_nivel) notas.push('<span class="bad">Bloqueada por nivel bajo</span>');
+  if (pend.bomba) notas.push('<span class="warn">Enviando “' + NOMBRE_MODO[pend.bomba] + '” al invernadero…</span>');
+  if (s.modo_manual) notas.push('<span class="warn">Manual ' + (s.modo_manual == 1 ? "ON" : "OFF") +
+    " — vuelve a automático en " + s.manual_min + " min</span>");
+  else if (!s.bloqueo_nivel && s.bomba_cambio)
+    notas.push(s.bomba_on ? "Riego del ciclo — se apaga a las " + s.bomba_cambio
+                          : "Pausa del ciclo — vuelve a prender a las " + s.bomba_cambio);
+  $("bombaNota").innerHTML = notas.join("<br>");
+  marcarSeg("segBomba", s.modo_manual);
+
+  // Ventilador
+  const ve = $("vent");
+  ve.className = "estado" + (s.vent_on ? " on" : "");
+  ve.querySelector("span").textContent = s.vent_on ? "Encendido" : "Apagado";
+  const nv2 = ["Prende a " + s.vent_on_c + " °C y apaga a " + s.vent_off_c + " °C"];
+  if (pend.ventilador) nv2.push('<span class="warn">Enviando “' + NOMBRE_MODO[pend.ventilador] + '” al invernadero…</span>');
+  if (s.vent_manual) nv2.push('<span class="warn">Manual ' + (s.vent_manual == 1 ? "ON" : "OFF") +
+    " — vuelve a automático en " + s.vent_manual_min + " min</span>");
+  $("ventNota").innerHTML = nv2.join("<br>");
+  $("vHoy").textContent = duracion(s.vent_hoy_s);
+  $("vAyer").textContent = duracion(s.vent_ayer_s);
+  $("vMes").textContent = duracion(s.vent_mes_s);
+  $("vMesAnt").textContent = duracion(s.vent_mesant_s);
+  marcarSeg("segVent", s.vent_manual);
+
+  // Solucion
+  DOSIS = { a: s.dosis_a, b: s.dosis_b, c: s.dosis_c };
+  if (!$("vt").dataset.tocado) $("vt").value = s.tanque_l;
+  calcular();
+
+  $("pie").innerHTML = "Encendido hace " + s.uptime + " · " + s.arranques + " arranques de bomba · RAM " +
+    (s.ram / 1024).toFixed(0) + " KB" +
+    (s.rssi ? " · WiFi " + s.rssi + " dBm (" + (s.rssi >= -60 ? "buena" : s.rssi >= -72 ? "regular" : "débil") + ")" : "") +
+    (s.wifi_caidas ? " · " + s.wifi_caidas + " caídas de WiFi" : "");
+}
+
+function marcarSeg(id, manual) {
+  const actual = manual == 1 ? "on" : manual == 2 ? "off" : "auto";
+  for (const b of $(id).querySelectorAll("button")) {
+    b.classList.toggle("sel", b.dataset.m === actual);
+    b.classList.toggle("off", b.dataset.m === "off");
+  }
+}
+
+async function orden(dispositivo, modo) {
+  try {
+    await api("/api/cmd", { method: "POST", body: { dispositivo, modo } });
+    aviso(FUENTE === "nube" ? "Orden enviada. El invernadero la aplica en menos de 30 s."
+                            : (dispositivo === "bomba" ? "Bomba: " : "Ventilador: ") + NOMBRE_MODO[modo]);
+    actualizar();
+  } catch (e) { if (e.message !== "clave") aviso("No se pudo enviar: " + e.message); }
+}
+
+// ---------- graficos ----------
+function grafico(id, rid, vals, color, u) {
+  const el = $(id), n = vals.length, p = [];
+  for (let i = 0; i < n; i++) if (vals[i] !== null) p.push([i, vals[i]]);
+  if (p.length < 2) {
+    el.innerHTML = '<text x="150" y="36" fill="#76987f" font-size="11" text-anchor="middle">juntando datos…</text>';
+    $(rid).textContent = "";
+    return;
+  }
+  const ys = p.map((q) => q[1]);
+  let lo = Math.min(...ys), hi = Math.max(...ys);
+  $(rid).textContent = "mín " + lo.toFixed(1) + u + " · máx " + hi.toFixed(1) + u;
+  if (hi - lo < 0.5) hi = lo + 0.5;
+  const pad = (hi - lo) * 0.18; lo -= pad; hi += pad;
+  const W = 300, H = 64;
+  const X = (k) => (n < 2 ? 0 : (k / (n - 1)) * W);
+  const Y = (v) => H - ((v - lo) / (hi - lo)) * H;
+  // Corta la linea donde faltan datos (no inventa un tramo recto)
+  const tramos = [];
+  let tramo = [];
+  for (let i = 0; i < p.length; i++) {
+    if (i && p[i][0] - p[i - 1][0] > 3) { tramos.push(tramo); tramo = []; }
+    tramo.push(p[i]);
+  }
+  tramos.push(tramo);
+  let svg = "";
+  for (const t of tramos) {
+    const d = t.map((q) => X(q[0]).toFixed(1) + "," + Y(q[1]).toFixed(1)).join(" ");
+    if (t.length > 1) {
+      const area = X(t[0][0]).toFixed(1) + "," + H + " " + d + " " + X(t[t.length - 1][0]).toFixed(1) + "," + H;
+      svg += '<polygon points="' + area + '" fill="' + color + '" opacity=".16"/>';
+    }
+    svg += '<polyline points="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" ' +
+      'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+  }
+  el.innerHTML = svg;
+}
+
+async function historial() {
+  try {
+    const h = await api("/api/history");
+    grafico("cagua", "ragua", h.agua, "#2fb3d1", "°C");
+    grafico("caire", "raire", h.aire, "#f2b640", "°C");
+    grafico("chum", "rhum", h.hum, "#6AAE3A", "%");
+  } catch (e) {}
+}
+
+// ---------- calculadora ----------
+function calcular() {
+  const total = parseFloat($("vt").value) || 0, hay = parseFloat($("va").value) || 0;
+  const falta = total - hay;
+  if (falta <= 0) {
+    $("dA").textContent = $("dB").textContent = $("dC").textContent = "--";
+    $("dNota").textContent = "El tanque ya está en el volumen objetivo.";
+    return;
+  }
+  $("dA").textContent = (falta * DOSIS.a).toFixed(0) + " ml";
+  $("dB").textContent = (falta * DOSIS.b).toFixed(0) + " ml";
+  $("dC").textContent = (falta * DOSIS.c).toFixed(0) + " ml";
+  $("dNota").textContent = "Para los " + falta.toFixed(0) + " L que vas a agregar. Disolvé cada concentrado " +
+    "por separado y en ese orden, nunca los mezcles puros. Después medí la EC y ajustá.";
+}
+$("vt").addEventListener("input", () => { $("vt").dataset.tocado = "1"; });
+
+// ---------- configuracion (engranaje) ----------
+// Los nombres (k) son los mismos que usa el firmware. Los rangos se repiten
+// aca para avisar antes de guardar; el ESP32 igual recorta lo que se pase.
+const ESQUEMA = [
+  { titulo: "Riego de día", ayuda: "dia", modo: "modo_dia", campos: [
+    { k: "dia_on",  l: "Prendida", u: "min", min: 1, max: 240 },
+    { k: "dia_off", l: "Apagada",  u: "min", min: 1, max: 240 } ] },
+  { titulo: "Riego de noche", ayuda: "noche", modo: "modo_noche", campos: [
+    { k: "noche_on",  l: "Prendida", u: "min", min: 1, max: 240 },
+    { k: "noche_off", l: "Apagada",  u: "min", min: 1, max: 240 } ] },
+  { titulo: "Horario", ayuda: "Qué horas cuentan como día y cuáles como noche.", campos: [
+    { k: "hora_dia",   l: "El día empieza a las",   u: "h", min: 0, max: 23 },
+    { k: "hora_noche", l: "La noche empieza a las", u: "h", min: 0, max: 23 } ] },
+  { titulo: "Ventilador", ayuda: "Según la temperatura del aire. Si el sensor de aire se cae, prende solo en la franja de abajo.", campos: [
+    { k: "vent_on",       l: "Prende a",             u: "°C", min: 10, max: 45, paso: 0.5 },
+    { k: "vent_off",      l: "Apaga a",              u: "°C", min: 5,  max: 44, paso: 0.5 },
+    { k: "vent_ss_desde", l: "Sin sensor, desde las", u: "h", min: 0, max: 23 },
+    { k: "vent_ss_hasta", l: "hasta las",            u: "h",  min: 0, max: 23 } ] },
+  { titulo: "Alertas al celular", ayuda: "Avisos por ntfy.", campos: [
+    { k: "helada",   l: "Helada si el aire baja de", u: "°C", min: -5, max: 15, paso: 0.5 },
+    { k: "calor",    l: "Calor si el aire llega a",  u: "°C", min: 20, max: 50, paso: 0.5 },
+    { k: "agua_min", l: "Agua fría bajo",            u: "°C", min: 0,  max: 25, paso: 0.5 },
+    { k: "agua_max", l: "Agua caliente sobre",       u: "°C", min: 15, max: 40, paso: 0.5 },
+    { k: "sensor_timeout",     l: "Sensor caído tras",       u: "min", min: 1, max: 120 },
+    { k: "recordatorio",       l: "Repetir aviso cada",      u: "min", min: 5, max: 720 },
+    { k: "recordatorio_nivel", l: "Tanque bajo: repetir cada", u: "min", min: 5, max: 720 } ] },
+  { titulo: "Botones Forzar", ayuda: "Cuánto dura un Forzar ON/OFF antes de volver a automático.", campos: [
+    { k: "manual_min", l: "Duración", u: "min", min: 1, max: 720 } ] },
+  { titulo: "Solución nutritiva", ayuda: "Dosis en ml por cada litro de agua que se agrega.", campos: [
+    { k: "tanque_l", l: "Tanque lleno", u: "L",    min: 10, max: 5000 },
+    { k: "dosis_a",  l: "Solución A",   u: "ml/L", min: 0,  max: 50, paso: 0.01 },
+    { k: "dosis_b",  l: "Solución B",   u: "ml/L", min: 0,  max: 50, paso: 0.01 },
+    { k: "dosis_c",  l: "Solución C",   u: "ml/L", min: 0,  max: 50, paso: 0.01 } ] },
+];
+let CFG = null;
+
+async function abrirConfig() {
+  $("hoja").classList.add("on");
+  $("errCfg").classList.remove("on");
+  $("formCfg").innerHTML = '<p class="mut">Cargando…</p>';
+  try {
+    const r = await api("/api/config");
+    CFG = r.cfg;
+    armarFormulario();
+  } catch (e) {
+    if (e.message === "clave") { cerrarConfig(); return; }
+    $("formCfg").innerHTML = '<p class="bad">No se pudo leer la configuración: ' + e.message + "</p>";
+  }
+}
+function cerrarConfig() { $("hoja").classList.remove("on"); }
+
+function armarFormulario() {
+  let html = "";
+  for (const g of ESQUEMA) {
+    html += '<div class="card grupo"><h3>' + g.titulo + "</h3>";
+    if (g.ayuda && g.ayuda.length > 6) html += "<p>" + g.ayuda + "</p>";
+    if (g.modo) {
+      const ciclado = CFG[g.modo] == 1;
+      html += '<div class="seg modo2" data-modo="' + g.modo + '">' +
+        '<button type="button" data-v="1" class="' + (ciclado ? "sel" : "") + '">Ciclado</button>' +
+        '<button type="button" data-v="0" class="' + (ciclado ? "" : "sel") + '">Continuo</button></div>';
+    }
+    html += '<div class="fila" data-campos="' + (g.modo || "") + '">';
+    for (const c of g.campos) {
+      html += '<div class="campo"><label for="c_' + c.k + '">' + c.l + "</label>" +
+        '<input id="c_' + c.k + '" type="number" inputmode="decimal" step="' + (c.paso || 1) + '" min="' + c.min +
+        '" max="' + c.max + '" value="' + CFG[c.k] + '"><span class="u">' + c.u + "</span></div>";
+    }
+    html += "</div>";
+    if (g.modo) html += '<div class="resumen" id="res_' + g.modo + '"></div>';
+    html += "</div>";
+  }
+  $("formCfg").innerHTML = html;
+  for (const seg of $("formCfg").querySelectorAll("[data-modo]")) {
+    for (const b of seg.querySelectorAll("button")) {
+      b.onclick = () => {
+        for (const x of seg.querySelectorAll("button")) x.classList.toggle("sel", x === b);
+        resumenes();
+      };
+    }
+  }
+  $("formCfg").oninput = resumenes;
+  resumenes();
+}
+
+function valorModo(clave) {
+  const sel = $("formCfg").querySelector('[data-modo="' + clave + '"] .sel');
+  return sel ? Number(sel.dataset.v) : CFG[clave];
+}
+
+function resumenCiclo(on, off) {
+  if (!(on >= 1 && off >= 1)) return "";
+  const ciclo = on + off;
+  let t = "Prende " + on + " min y descansa " + off + " min.";
+  if (60 % ciclo === 0) {
+    const inicios = [];
+    for (let m = 0; m < 60; m += ciclo) inicios.push(":" + String(m).padStart(2, "0"));
+    t += " Arranca a las " + inicios.join(", ") + " de cada hora.";
+  } else {
+    t += " Un ciclo cada " + ciclo + " min.";
+  }
+  return t;
+}
+
+function resumenes() {
+  for (const [modo, on, off, franja] of [["modo_dia", "dia_on", "dia_off", "dia"], ["modo_noche", "noche_on", "noche_off", "noche"]]) {
+    const ciclado = valorModo(modo) === 1;
+    const fila = $("formCfg").querySelector('[data-campos="' + modo + '"]');
+    fila.style.display = ciclado ? "" : "none";
+    const hd = Number($("c_hora_dia").value), hn = Number($("c_hora_noche").value);
+    const horas = franja === "dia" ? "De " + hd + ":00 a " + hn + ":00. " : "De " + hn + ":00 a " + hd + ":00. ";
+    $("res_" + modo).textContent = horas + (ciclado
+      ? resumenCiclo(Number($("c_" + on).value), Number($("c_" + off).value))
+      : "La bomba queda prendida todo el tiempo.");
+  }
+}
+
+function leerFormulario() {
+  const cfg = {};
+  for (const g of ESQUEMA) {
+    if (g.modo) cfg[g.modo] = valorModo(g.modo);
+    for (const c of g.campos) {
+      const v = parseFloat($("c_" + c.k).value);
+      if (!Number.isFinite(v) || v < c.min || v > c.max)
+        throw new Error(c.l + " (" + g.titulo + ") tiene que estar entre " + c.min + " y " + c.max + " " + c.u + ".");
+      cfg[c.k] = v;
+    }
+  }
+  if (cfg.vent_off >= cfg.vent_on) throw new Error("El ventilador tiene que apagar a menos grados de los que prende.");
+  if (cfg.agua_min >= cfg.agua_max) throw new Error("El agua fría tiene que ser menor que el agua caliente.");
+  if (cfg.hora_dia === cfg.hora_noche) throw new Error("El día y la noche no pueden empezar a la misma hora.");
+  return cfg;
+}
+
+async function guardarConfig() {
+  const err = $("errCfg");
+  err.classList.remove("on");
+  let cfg;
+  try { cfg = leerFormulario(); }
+  catch (e) { err.textContent = e.message; err.classList.add("on"); return; }
+  const btn = $("btnGuardar");
+  btn.disabled = true;
+  try {
+    const r = await api("/api/config", { method: "POST", body: { cfg } });
+    CFG = r.cfg;
+    cerrarConfig();
+    aviso(FUENTE === "nube" ? "Guardado. El invernadero lo aplica en menos de 30 s." : "Guardado en el equipo.");
+    actualizar();
+  } catch (e) {
+    if (e.message !== "clave") { err.textContent = "No se pudo guardar: " + e.message; err.classList.add("on"); }
+  } finally { btn.disabled = false; }
+}
+
+// ---------- arranque ----------
+async function bucleEstado() {
+  if (!$("login").classList.contains("on")) await actualizar();   // sin clave no insiste
+  setTimeout(bucleEstado, FUENTE === "nube" ? 10000 : 5000);
+}
+bucleEstado();
+historial();
+setInterval(historial, 60000);
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Panel Verdalia en Netlify.
+# public/              -> la pagina (la misma que sirve el ESP32 en la casa)
+# netlify/functions/   -> la API: el ESP32 manda su estado y el panel lo lee
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"

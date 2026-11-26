@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="720" viewBox="0 0 900 720" font-family="Segoe UI, Arial, sans-serif">
+  <style>
+    .title{font-size:22px;font-weight:700;fill:#14532d}
+    .sub{font-size:13px;fill:#555}
+    .lbl{font-size:13px;fill:#111}
+    .h{font-size:12px;fill:#1d4ed8;font-weight:600}
+    .leg{font-size:13px;fill:#111}
+    .legt{font-size:15px;font-weight:700;fill:#14532d}
+    .note{font-size:12px;fill:#7c2d12}
+  </style>
+
+  <rect x="0" y="0" width="900" height="720" fill="#f7fbf7"/>
+  <text x="30" y="38" class="title">Manifold NFT — 7 salidas con válvula (extremo alto)</text>
+  <text x="30" y="58" class="sub">Vista de frente. Alimentado por la manguera ¾" de la bomba. Cuerpo ¾", salidas ½".</text>
+
+  <!-- Vertical body -->
+  <rect x="250" y="110" width="26" height="470" rx="4" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Cap top -->
+  <rect x="246" y="90" width="34" height="22" rx="4" fill="#94a3b8" stroke="#475569" stroke-width="2"/>
+  <text x="292" y="105" class="lbl">Tapón (cap) ¾"</text>
+
+  <!-- Outlets -->
+  <!-- y positions from top(1.70m) to bottom(0.50m) -->
+  <g>
+    <!-- generate 7 rows -->
+    <!-- Row helper drawn manually -->
+    <!-- Row 1: top 1.70 -->
+    <g transform="translate(276,150)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/> <!-- tee stub -->
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/> <!-- adapter -->
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/> <!-- valve -->
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/> <!-- espiga -->
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/> <!-- hose -->
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 7</text>
+      <text x="196" y="-12" class="h">1.70 m</text>
+    </g>
+    <g transform="translate(276,213)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 6</text>
+      <text x="196" y="-12" class="h">1.50 m</text>
+    </g>
+    <g transform="translate(276,276)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 5</text>
+      <text x="196" y="-12" class="h">1.30 m</text>
+    </g>
+    <g transform="translate(276,339)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 4</text>
+      <text x="196" y="-12" class="h">1.10 m</text>
+    </g>
+    <g transform="translate(276,402)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 3</text>
+      <text x="196" y="-12" class="h">0.90 m</text>
+    </g>
+    <g transform="translate(276,465)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 2</text>
+      <text x="196" y="-12" class="h">0.70 m</text>
+    </g>
+    <g transform="translate(276,528)">
+      <rect x="0" y="-9" width="46" height="18" fill="#cbd5e1" stroke="#64748b"/>
+      <rect x="46" y="-7" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+      <circle cx="82" cy="0" r="13" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+      <rect x="95" y="-6" width="18" height="12" fill="#e2e8f0" stroke="#64748b"/>
+      <path d="M113 0 q40 0 60 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+      <polygon points="173,-7 190,0 173,7" fill="#3b82f6"/>
+      <text x="196" y="4" class="lbl">Tubo 1 (más bajo)</text>
+      <text x="196" y="-12" class="h">0.50 m</text>
+    </g>
+  </g>
+
+  <!-- Bottom elbow + feed -->
+  <path d="M263 580 q0 26 -26 26" fill="none" stroke="#64748b" stroke-width="26"/>
+  <text x="120" y="600" class="lbl" text-anchor="end">Codo ¾"</text>
+  <path d="M60 606 q90 0 177 0" stroke="#2563eb" stroke-width="10" fill="none"/>
+  <circle cx="60" cy="606" r="6" fill="#2563eb"/>
+  <text x="30" y="632" class="note">Manguera ¾" que sube desde la BOMBA (Tanque → bomba → manifold)</text>
+
+  <!-- Legend -->
+  <text x="560" y="150" class="legt">Cada salida (7 iguales):</text>
+  <g transform="translate(560,170)">
+    <rect x="0" y="-2" width="20" height="14" fill="#cbd5e1" stroke="#64748b"/>
+    <text x="30" y="10" class="leg">Tee reductora ¾ × ¾ × ½"</text>
+  </g>
+  <g transform="translate(560,196)">
+    <rect x="0" y="-2" width="20" height="14" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="30" y="10" class="leg">Adaptador macho ½"</text>
+  </g>
+  <g transform="translate(560,222)">
+    <circle cx="10" cy="6" r="10" fill="#ef4444" stroke="#7f1d1d" stroke-width="2"/>
+    <text x="30" y="10" class="leg">Válvula de bola ½" (calibra el caudal)</text>
+  </g>
+  <g transform="translate(560,250)">
+    <rect x="0" y="0" width="20" height="12" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="30" y="10" class="leg">Espiga / conector manguera ½"</text>
+  </g>
+  <g transform="translate(560,276)">
+    <path d="M0 6 q10 0 20 0" stroke="#3b82f6" stroke-width="6" fill="none"/>
+    <text x="30" y="10" class="leg">Manguera ½" → entra al tubo NFT</text>
+  </g>
+
+  <rect x="560" y="320" width="310" height="120" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="575" y="345" class="legt" font-size="14">Nota de calibración</text>
+  <text x="575" y="368" class="note">Los tubos 1 y 2 (los más bajos) reciben más</text>
+  <text x="575" y="386" class="note">presión por gravedad → ciérrales un poco la</text>
+  <text x="575" y="404" class="note">válvula para que los 7 tubos lleven caudal parejo.</text>
+  <text x="575" y="428" class="note">Bomba corrida 24/7 (no apagar).</text>
+</svg>
